@@ -41,6 +41,7 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 
 
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
@@ -66,6 +67,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private static final Logger LOGGER = new Logger();
 
   private static final int PERMISSIONS_REQUEST = 1;
+  private static final int PERMISSION_REQUEST_EXT_STORAGE = 2;
 
   private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
   protected int previewWidth = 0;
@@ -124,6 +126,9 @@ public abstract class CameraActivity extends AppCompatActivity
       setFragment();
     } else {
       requestPermission();
+    }
+    if (hasExtMemoryPermission() != true) {
+      requestExtMemoryPermission();
     }
 
     threadsTextView = findViewById(R.id.threads);
@@ -420,6 +425,12 @@ public abstract class CameraActivity extends AppCompatActivity
       } else {
         requestPermission();
       }
+    }else if(requestCode == PERMISSION_REQUEST_EXT_STORAGE){
+      if (allPermissionsGranted(grantResults)) {
+        Log.i("VIJESH", "onRequestPermissionsResult: EXT STORAGE permission not granted. *************");
+      }else if (allPermissionsGranted(grantResults)) {
+        Log.i("VIJESH", "onRequestPermissionsResult: permission granted.");
+      }
     }
   }
 
@@ -450,6 +461,27 @@ public abstract class CameraActivity extends AppCompatActivity
             .show();
       }
       requestPermissions(new String[] {PERMISSION_CAMERA}, PERMISSIONS_REQUEST);
+    }
+  }
+
+  private boolean hasExtMemoryPermission() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      return checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    } else {
+      return true;
+    }
+  }
+
+  private void requestExtMemoryPermission() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+        Toast.makeText(
+                CameraActivity.this,
+                "WRITE EXTERNAL STORAGE permission is required for this demo",
+                Toast.LENGTH_LONG)
+                .show();
+      }
+      requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSIONS_REQUEST);
     }
   }
 

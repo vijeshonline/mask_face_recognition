@@ -212,6 +212,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                       TF_OD_API_IS_QUANTIZED);
       //cropSize = TF_OD_API_INPUT_SIZE;
       initSavedRecogFiles(detector);
+      initSavedRecogFilesFromAssets(detector);
 
     } catch (final IOException e) {
       e.printStackTrace();
@@ -469,6 +470,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
           }
 
           writeRecordsToFile(name, rec);
+          writeRecordsToExternalDir(name, rec);
           //TODO remove below segment of code.
           SimilarityClassifier.Recognition recog = readRecordsFromFile(name);
 
@@ -743,6 +745,40 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     return maskedFace;
   }
 
+  public boolean writeRecordsToExternalDir(String fileName, SimilarityClassifier.Recognition recog){
+
+    ObjectOutputStream oos=null;
+//    String filePath = RECOG_DIR_NAME+"/"+fileName;
+
+    FileOutputStream fos = null;
+    try{
+      File root = Environment.getExternalStorageDirectory();
+      File dir = new File (root.getAbsolutePath() + "/download");
+      dir.mkdirs();
+      File file = new File(dir, fileName);
+      fos = new FileOutputStream(file);
+      //fos = getApplicationContext().openFileOutput(fileName, Context.MODE_PRIVATE);
+      oos = new ObjectOutputStream(fos);
+      oos.writeObject(recog);
+      oos.close();
+      Log.v("VIJESH", "WriteRecordsToExtFile: Recog Object: " + dir.getPath()+ " recog:: " + recog.toString());
+      fos.close();
+      return true;
+    }catch(Exception e){
+      Log.e("VIJESH", "Cant save records:  "+e.getMessage());
+      return false;
+    }
+    finally{
+      if(oos!=null && fos != null)
+        try{
+          oos.close();
+          fos.close();
+        }catch(Exception e){
+          Log.e("VIJESH", "Error while closing stream "+e.getMessage());
+        }
+    }
+  }
+
   public boolean writeRecordsToFile(String fileName, SimilarityClassifier.Recognition recog){
 
     ObjectOutputStream oos=null;
@@ -796,6 +832,32 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
   }
 
+  private SimilarityClassifier.Recognition readRecordsFromAssets(String fileName){
+    FileInputStream fin;
+    ObjectInputStream ois=null;
+
+    try{
+      //fin = getApplicationContext().openFileInput(fileName);
+      //fin = new FileInputStream(getAssets().open(fileName));
+      fin = getAssets().openFd(fileName).createInputStream();
+      ois = new ObjectInputStream(fin);
+      SimilarityClassifier.Recognition recog = (SimilarityClassifier.Recognition) ois.readObject();
+      ois.close();
+      Log.v("VIJESH", "readRecordsFromAssets: Recog Object: " + recog.toString());
+      return recog;
+    }catch(Exception e){
+      Log.e("VIJESH", "readRecordsFromAssets Cant read saved records "+fileName + e.getMessage());
+      return null;
+    }
+    finally{
+      if(ois!=null)
+        try{
+          ois.close();
+        }catch(Exception e){
+          Log.i("VIJESH", "Error in closing stream while reading records"+e.getMessage());
+        }
+    }
+  }
   private void initSavedRecogFiles(SimilarityClassifier detector) {
     try {
       //File folder = Environment.getDataDirectory();
@@ -820,8 +882,33 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       Log.i("VIJESH", e.getMessage());
     }
   }
-  private void createDirForRecog(String dirName) {
 
+  private void initSavedRecogFilesFromAssets(SimilarityClassifier detector) {
+    try {
+      String[] fileNameList = {"v5.mp3", "anees.mp3", "aneesU.mp3"};
+
+      for (String fileName : fileNameList) {
+        SimilarityClassifier.Recognition recog = readRecordsFromAssets(fileName);
+        if (null != recog) {
+          detector.register(stripExtension(fileName), recog); //label is same as filename
+          Log.v("VIJESH", "initSavedRecogFilesFromAssets: Initializing recognition data file From Assets: " + fileName);
+        }
+      }
+    }catch(Exception e){
+        e.printStackTrace();
+        Log.i("VIJESH", e.getMessage());
+    }
+  }
+
+
+  private String stripExtension(String fileName) {
+    if (fileName.indexOf(".") > 0) {
+      return fileName.substring(0, fileName.lastIndexOf("."));
+    } else {
+      return fileName;
+    }
+  }
+  private void createDirForRecog(String dirName) {
     File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), dirName);
 
     if (!mediaStorageDir.exists()) {
@@ -831,7 +918,3 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
   }
 }
-
-
-
-
