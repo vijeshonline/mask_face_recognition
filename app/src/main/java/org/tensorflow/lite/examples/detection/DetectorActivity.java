@@ -17,6 +17,7 @@
 package org.tensorflow.lite.examples.detection;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -31,6 +32,7 @@ import android.graphics.Typeface;
 import android.hardware.camera2.CameraCharacteristics;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
@@ -50,7 +52,12 @@ import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 import java.util.List;
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
@@ -89,6 +96,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private static final boolean TF_OD_API_IS_QUANTIZED_MASK = false;
   private static final String TF_OD_API_MODEL_FILE_MASK = "mask_detector.tflite";
   private static final String TF_OD_API_LABELS_FILE_MASK = "file:///android_asset/mask_labelmap.txt";
+
+//  private static final String RECOG_DIR_NAME = "FaceRecognitionFiles";
 
   private static final DetectorMode MODE = DetectorMode.TF_OD_API;
   // Minimum detection confidence to track a detection.
@@ -170,7 +179,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     mPreference = getSharedPreferences(sharedPrefFile, MODE_PRIVATE);
     //checkWritePermission();
-
+//    createDirForRecog(RECOG_DIR_NAME);
   }
 
 
@@ -202,6 +211,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                       TF_OD_API_INPUT_SIZE,
                       TF_OD_API_IS_QUANTIZED);
       //cropSize = TF_OD_API_INPUT_SIZE;
+      initSavedRecogFiles(detector);
+
     } catch (final IOException e) {
       e.printStackTrace();
       LOGGER.e(e, "Exception initializing classifier!");
@@ -366,6 +377,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     TF_OD_API;
   }
 
+
   @Override
   protected void setUseNNAPI(final boolean isChecked) {
     runInBackground(() -> detector.setUseNNAPI(isChecked));
@@ -456,7 +468,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             return;
           }
 
-          detector.register(name, rec);
+          writeRecordsToFile(name, rec);
+          //TODO remove below segment of code.
+          SimilarityClassifier.Recognition recog = readRecordsFromFile(name);
+
+          if(recog != null){
+            detector.register(name, recog);
+          }else{
+            Log.i("VIJESH","Failed to save face recognition data....");
+          }
+          //TODO remove till this
+
+//          detector.register(name, rec); //TODO to be uncommented.
           //knownFaces.put(name, rec);
           dlg.dismiss();
       }
@@ -701,12 +724,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         label = result.getTitle();
         Log.d("VIJESH","isMaskDetected: LABEL: " + label +", Confidence: "+confidence);
         if (result.getId().equals("0")) {
-          //color = Color.GREEN;
-          Log.i ("VIJESH","isMaskDetected: MASK   ********************************");
+          Log.i ("VIJESH","isMaskDetected: MASK   -------------------------------------");
           maskedFace = true;
         }
         else {
-          //color = Color.RED;
           Log.i ("VIJESH","NO MASK   ???????????????????????????????????");
 //          if ( confidence > 0.9999f){
 //            ringAlarmSound();
@@ -722,5 +743,95 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     return maskedFace;
   }
 
+  public boolean writeRecordsToFile(String fileName, SimilarityClassifier.Recognition recog){
 
+    ObjectOutputStream oos=null;
+//    String filePath = RECOG_DIR_NAME+"/"+fileName;
+    FileOutputStream fos;
+    try{
+      //fos = new FileOutputStream(fileName);
+      fos = getApplicationContext().openFileOutput(fileName, Context.MODE_PRIVATE);
+      oos = new ObjectOutputStream(fos);
+      oos.writeObject(recog);
+      oos.close();
+      Log.v("VIJESH", "WriteRecordsToFile: Recog Object: " + recog.toString());
+      fos.close();
+      return true;
+    }catch(Exception e){
+      Log.e("VIJESH", "Cant save records:  "+e.getMessage());
+      return false;
+    }
+    finally{
+      if(oos!=null)
+        try{
+          oos.close();
+        }catch(Exception e){
+          Log.e("VIJESH", "Error while closing stream "+e.getMessage());
+        }
+    }
+  }
+
+  private SimilarityClassifier.Recognition readRecordsFromFile(String fileName){
+    FileInputStream fin;
+    ObjectInputStream ois=null;
+//    String filePath = RECOG_DIR_NAME+"/"+fileName;
+    try{
+      fin = getApplicationContext().openFileInput(fileName);
+      ois = new ObjectInputStream(fin);
+      SimilarityClassifier.Recognition recog = (SimilarityClassifier.Recognition) ois.readObject();
+      ois.close();
+      Log.v("VIJESH", "ReadRecordsFromFile: Recog Object: " + recog.toString());
+      return recog;
+    }catch(Exception e){
+      Log.e("VIJESH", "Cant read saved records   "+e.getMessage());
+      return null;
+    }
+    finally{
+      if(ois!=null)
+        try{
+          ois.close();
+        }catch(Exception e){
+          Log.i("VIJESH", "Error in closing stream while reading records"+e.getMessage());
+        }
+    }
+  }
+
+  private void initSavedRecogFiles(SimilarityClassifier detector) {
+    try {
+      //File folder = Environment.getDataDirectory();
+      File folder = getApplicationContext().getFilesDir();
+      File[] listOfFiles = folder.listFiles();
+
+      for (File file : listOfFiles) {
+        if (file.isFile()) {
+          //System.out.println(file.getName());
+          String fileName = file.getName();
+          //String fullFilePath = RECOG_DIR_NAME+"/"+fileName;
+          //Log.v("VIJESH", "Initializing recognition data file " + fileName + folder.getPath());
+          SimilarityClassifier.Recognition recog = readRecordsFromFile(fileName);
+          if (null != recog) {
+            detector.register(fileName, recog); //label is same as filename
+            Log.v("VIJESH", "Initializing recognition data file " + folder.getPath() + fileName);
+          }
+        }
+      }
+    }catch (Exception e){
+      e.printStackTrace();
+      Log.i("VIJESH", e.getMessage());
+    }
+  }
+  private void createDirForRecog(String dirName) {
+
+    File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), dirName);
+
+    if (!mediaStorageDir.exists()) {
+      if (!mediaStorageDir.mkdirs()) {
+        Log.d("App", "failed to create directory");
+      }
+    }
+  }
 }
+
+
+
+

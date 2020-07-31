@@ -16,7 +16,15 @@ limitations under the License.
 package org.tensorflow.lite.examples.detection.tflite;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.RectF;
+import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.List;
 
 /** Generic interface for interacting with different recognition engines. */
@@ -37,7 +45,8 @@ public interface SimilarityClassifier {
   void setUseNNAPI(boolean isChecked);
 
   /** An immutable result returned by a Classifier describing what was recognized. */
-  public class Recognition {
+  public class Recognition implements Serializable{
+    private static final long serialVersionUID = 6529685098267757690L;
     /**
      * A unique identifier for what has been recognized. Specific to the class, not the instance of
      * the object.
@@ -54,11 +63,11 @@ public interface SimilarityClassifier {
     private Object extra;
 
     /** Optional location within the source image for the location of the recognized object. */
-    private RectF location;
+    private transient RectF location;
     private Integer color;
-    private Bitmap crop;
+    private transient Bitmap crop;
 
-    public Recognition(
+    public Recognition (
             final String id, final String title, final Float distance, final RectF location) {
       this.id = id;
       this.title = title;
@@ -133,5 +142,50 @@ public interface SimilarityClassifier {
     public Bitmap getCrop() {
       return this.crop;
     }
+
+    //VIJESH
+
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+      Log.v("VIJESH", "SimilarityClassifier.Recognition:WriteObject Entered");
+      // This will serialize all fields that you did not mark with 'transient'
+      // (Java's default behaviour)
+      oos.defaultWriteObject();
+
+      Float top = location.top;
+      Float bottom = location.bottom;
+      Float left = location.left;
+      Float right = location.right;
+      oos.writeFloat(top);
+      oos.writeFloat(bottom);
+      oos.writeFloat(left);
+      oos.writeFloat(right);
+
+      // Now, manually serialize all transient fields that you want to be serialized
+      if(crop!=null){
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        boolean success = crop.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+        if(success){
+          oos.writeObject(byteStream.toByteArray());
+        }
+      }
+    }
+
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException{
+      Log.v("VIJESH", "SimilarityClassifier.Recognition:ReadObject Entered");
+      // Now, all again, deserializing - in the SAME ORDER!
+      // All non-transient fields
+      ois.defaultReadObject();
+      this.location = new RectF();
+      this.location.top = ois.readFloat();
+      this.location.bottom = ois.readFloat();
+      this.location.left = ois.readFloat();
+      this.location.right = ois.readFloat();
+      // All other fields that you serialized
+      byte[] image = (byte[]) ois.readObject();
+      if(image != null && image.length > 0){
+        crop = BitmapFactory.decodeByteArray(image, 0, image.length);
+      }
+    }
+    //VIJESH
   }
 }
