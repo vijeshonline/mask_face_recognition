@@ -44,14 +44,32 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 
+import org.tensorflow.lite.examples.detection.customview.OverlayView;
+import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
+import org.tensorflow.lite.examples.detection.env.BorderedText;
+import org.tensorflow.lite.examples.detection.env.ImageUtils;
+import org.tensorflow.lite.examples.detection.env.Logger;
+import org.tensorflow.lite.examples.detection.tflite.Classifier;
+import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier;
+import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
+import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectMaskDetectionAPIModel;
+import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -60,16 +78,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 import java.util.List;
-import org.tensorflow.lite.examples.detection.customview.OverlayView;
-import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
-import org.tensorflow.lite.examples.detection.env.BorderedText;
-import org.tensorflow.lite.examples.detection.env.ImageUtils;
-import org.tensorflow.lite.examples.detection.env.Logger;
-import org.tensorflow.lite.examples.detection.tflite.SimilarityClassifier;
-import org.tensorflow.lite.examples.detection.tflite.Classifier;
-import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
-import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectMaskDetectionAPIModel;
-import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
+import java.util.Random;
 
 /**
  * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
@@ -151,6 +160,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   private SharedPreferences mPreference;
   private String sharedPrefFile = "org.tensorflow.lite.examples.detection.nameEmailPrefs";
+  private StorageReference mStorageRef;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -180,6 +190,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     mPreference = getSharedPreferences(sharedPrefFile, MODE_PRIVATE);
     //checkWritePermission();
 //    createDirForRecog(RECOG_DIR_NAME);
+    mStorageRef = FirebaseStorage.getInstance().getReference();
   }
 
 
@@ -212,7 +223,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                       TF_OD_API_IS_QUANTIZED);
       //cropSize = TF_OD_API_INPUT_SIZE;
       initSavedRecogFiles(detector);
-      initSavedRecogFilesFromAssets(detector);
+//      initSavedRecogFilesFromAssets(detector);
 
     } catch (final IOException e) {
       e.printStackTrace();
@@ -468,14 +479,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             Toast.makeText(getApplicationContext(),"Wrong email format !!!", Toast.LENGTH_SHORT).show();
             return;
           }
-
           writeRecordsToFile(name, rec);
           writeRecordsToExternalDir(name, rec);
-          //TODO remove below segment of code.
-          SimilarityClassifier.Recognition recog = readRecordsFromFile(name);
 
-          if(recog != null){
-            detector.register(name, recog);
+          if(rec != null){
+            detector.register(name, rec);
           }else{
             Log.i("VIJESH","Failed to save face recognition data....");
           }
@@ -599,10 +607,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         matrix2.postTranslate(-faceBB.left, -faceBB.top);
         matrix2.postScale(sx2, sy2);
         maskcvFace.drawBitmap(portraitBmp,matrix2,null);
-
         boolean masked = isMaskDetected(maskFaceBmp);
-
-
         //vijesh
 
         //canvas.drawRect(faceBB, paint);
@@ -621,7 +626,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             (int) faceBB.height());
         }
 
-
+//        if(masked != true) { //if no mask detected, upload bmp for face recgonition.
+//          uploadBitMaptoFirebase(portraitBmp);
+//        }
 
         final long startTime = SystemClock.uptimeMillis();
         final List<SimilarityClassifier.Recognition> resultsAux = detector.recognizeImage(faceBmp, add);
@@ -778,6 +785,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
     }
   }
+/*
+* Write face data to external storage.
+* This data will be used to teach the face to system, when APK is launched every time.
+* */
 
   public boolean writeRecordsToFile(String fileName, SimilarityClassifier.Recognition recog){
 
@@ -831,14 +842,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
     }
   }
-
+/*
+* Read JPEG files (saved as .mp3) from assets folder and return Recognition object.
+* */
   private SimilarityClassifier.Recognition readRecordsFromAssets(String fileName){
     FileInputStream fin;
     ObjectInputStream ois=null;
 
     try{
-      //fin = getApplicationContext().openFileInput(fileName);
-      //fin = new FileInputStream(getAssets().open(fileName));
       fin = getAssets().openFd(fileName).createInputStream();
       ois = new ObjectInputStream(fin);
       SimilarityClassifier.Recognition recog = (SimilarityClassifier.Recognition) ois.readObject();
@@ -849,6 +860,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       Log.e("VIJESH", "readRecordsFromAssets Cant read saved records "+fileName + e.getMessage());
       return null;
     }
+
     finally{
       if(ois!=null)
         try{
@@ -858,6 +870,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         }
     }
   }
+/*
+Face data is stored in external director folder.
+Read from ext dir and set recog data to detector.
+Face data can be saved in external directory. To avoid teaching every face manually.
+.MP3 extension added to avoid compression by Android. (.JPG will get compressed and read fails)
+*/
   private void initSavedRecogFiles(SimilarityClassifier detector) {
     try {
       //File folder = Environment.getDataDirectory();
@@ -866,10 +884,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
       for (File file : listOfFiles) {
         if (file.isFile()) {
-          //System.out.println(file.getName());
           String fileName = file.getName();
-          //String fullFilePath = RECOG_DIR_NAME+"/"+fileName;
-          //Log.v("VIJESH", "Initializing recognition data file " + fileName + folder.getPath());
           SimilarityClassifier.Recognition recog = readRecordsFromFile(fileName);
           if (null != recog) {
             detector.register(fileName, recog); //label is same as filename
@@ -883,22 +898,28 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
   }
 
-  private void initSavedRecogFilesFromAssets(SimilarityClassifier detector) {
-    try {
-      String[] fileNameList = {"v5.mp3", "anees.mp3", "aneesU.mp3"};
-
-      for (String fileName : fileNameList) {
-        SimilarityClassifier.Recognition recog = readRecordsFromAssets(fileName);
-        if (null != recog) {
-          detector.register(stripExtension(fileName), recog); //label is same as filename
-          Log.v("VIJESH", "initSavedRecogFilesFromAssets: Initializing recognition data file From Assets: " + fileName);
-        }
-      }
-    }catch(Exception e){
-        e.printStackTrace();
-        Log.i("VIJESH", e.getMessage());
-    }
-  }
+//  /*
+//  Face data is stored in assets folder.
+//  Read from assets and set recog data to detector.
+//  This will help to deliver APK with pre-trained faces. (APK size will increase.
+//  .MP3 extension added to avoid compression by Android. (.JPG will get compressed and read fails)
+//  */
+//  private void initSavedRecogFilesFromAssets(SimilarityClassifier detector) {
+//    try {
+//      String[] fileNameList = {"v5.mp3", "anees.mp3", "aneesU.mp3"};
+//
+//      for (String fileName : fileNameList) {
+//        SimilarityClassifier.Recognition recog = readRecordsFromAssets(fileName);
+//        if (null != recog) {
+//          detector.register(stripExtension(fileName), recog); //label is same as filename
+//          Log.v("VIJESH", "initSavedRecogFilesFromAssets: Initializing recognition data file From Assets: " + fileName);
+//        }
+//      }
+//    }catch(Exception e){
+//        e.printStackTrace();
+//        Log.i("VIJESH", e.getMessage());
+//    }
+//  }
 
 
   private String stripExtension(String fileName) {
@@ -916,5 +937,67 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         Log.d("App", "failed to create directory");
       }
     }
+  }
+
+//  private String saveBitmapToLocalStorage(Bitmap faceBmp){
+//    String jpegPath = "path";
+//    try {
+//      String root = Environment.getExternalStorageDirectory().toString();
+//      File myDir = new File(root + "/req_images");
+//      myDir.mkdirs();
+//      Random generator = new Random();
+//      int n = 10000;
+//      n = generator.nextInt(n);
+//      String fname = "Image-" + n + ".jpg";
+//      File file = new File(myDir, fname);
+//      Log.i("VIJESH", "" + file);
+//      if (file.exists())
+//        file.delete();
+//      try {
+//        FileOutputStream out = new FileOutputStream(file);
+//        faceBmp.compress(Bitmap.CompressFormat.JPEG, 90, out);
+//        out.flush();
+//        out.close();
+//      } catch (Exception e) {
+//        e.printStackTrace();
+//      }
+//
+//      jpegPath = root + "/req_image/" + fname;
+//      Log.i("VIJESH","JPEG save to path: " + jpegPath);
+//    }catch (Exception e){
+//      e.printStackTrace();
+//      Log.e("VIJESH", "Failed to write file to memory");
+//    }
+//    return jpegPath;
+//  }
+  private void uploadBitMaptoFirebase(Bitmap faceBmp){
+    Log.i("VIJESH", "Uploading files to firebase cloud.........");
+    Random generator = new Random(); //create a random file name
+    int n = 10000;
+    n = generator.nextInt(n);
+    String fname = "Image-50-" + n + ".jpg";
+
+    StorageReference faceRef = mStorageRef.child("ForRecognition/"+fname);
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    faceBmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+    byte[] data = baos.toByteArray();
+
+    UploadTask uploadTask = faceRef.putBytes(data);
+    uploadTask.addOnFailureListener(new OnFailureListener() {
+      @Override
+      public void onFailure(@NonNull Exception exception) {
+        // Handle unsuccessful uploads
+      }
+    }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+      @Override
+      public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+        // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+        // ...
+        Log.i("VIJESH","uploaded: "+taskSnapshot.toString());
+      }
+    });
+
+
   }
 }

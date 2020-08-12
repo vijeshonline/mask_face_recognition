@@ -122,9 +122,12 @@ public abstract class CameraActivity extends AppCompatActivity
     setSupportActionBar(toolbar);
     getSupportActionBar().setDisplayShowTitleEnabled(false);
 
+
     if (hasPermission()) {
+      Log.i("VIJESH","camera permitted");
       setFragment();
     } else {
+      Log.i("VIJESH","camera not permitted requested");
       requestPermission();
     }
     if (hasExtMemoryPermission() != true) {
@@ -421,9 +424,11 @@ public abstract class CameraActivity extends AppCompatActivity
     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     if (requestCode == PERMISSIONS_REQUEST) {
       if (allPermissionsGranted(grantResults)) {
+        Log.i("VIJESH","camera permitted  2");
         setFragment();
       } else {
         requestPermission();
+        Log.i("VIJESH","camera not permitted 2");
       }
     }else if(requestCode == PERMISSION_REQUEST_EXT_STORAGE){
       if (allPermissionsGranted(grantResults)) {

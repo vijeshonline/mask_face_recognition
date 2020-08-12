@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "678142487675",
+    "firebase_url": "https://hackathonproject-b82e8.firebaseio.com",
+    "project_id": "hackathonproject-b82e8",
+    "storage_bucket": "hackathonproject-b82e8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678142487675:android:74ca6a54a378d5fecb46de",
+        "android_client_info": {
+          "package_name": "org.tensorflow.lite.examples.detection"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "678142487675-trds5qbvgg9s5k0mo1fjafjb26hmdsbn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB542-8fUiRTuftvSuObYe-ksyZBpw3mUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "678142487675-trds5qbvgg9s5k0mo1fjafjb26hmdsbn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678142487675:android:7d666467050cf628cb46de",
+        "android_client_info": {
+          "package_name": "org.tensorflow.lite.examples.facerecognition"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "678142487675-trds5qbvgg9s5k0mo1fjafjb26hmdsbn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB542-8fUiRTuftvSuObYe-ksyZBpw3mUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "678142487675-trds5qbvgg9s5k0mo1fjafjb26hmdsbn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
