@@ -116,6 +116,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private static final Size DESIRED_PREVIEW_SIZE = new Size(640, 480);
   //private static final int CROP_SIZE = 320;
   //private static final Size CROP_SIZE = new Size(320, 320);
+  private static final String TAG = "MASK_FACE_RECOG";
 
   private static boolean emailSend = false;
   private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -465,17 +466,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             return;
           }
 
-          //vijesh
+          //
           String email = toEmail.getText().toString();
-          Log.i("VIJESH",email);
+          Log.i(TAG,email);
           boolean emailStatus =  android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
           if (emailStatus){
             SharedPreferences.Editor prefEditor = mPreference.edit();
             prefEditor.putString(name,email);
             prefEditor.apply();
-            Log.i("VIJESH", "Email added to sharedPref: "+email);
+            Log.i(TAG, "Email added to sharedPref: "+email);
           }else{
-            Log.i("VIJESH","Wrong email!!!");
+            Log.i(TAG,"Wrong email!!!");
             Toast.makeText(getApplicationContext(),"Wrong email format !!!", Toast.LENGTH_SHORT).show();
             return;
           }
@@ -485,7 +486,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
           if(rec != null){
             detector.register(name, rec);
           }else{
-            Log.i("VIJESH","Failed to save face recognition data....");
+            Log.i(TAG,"Failed to save face recognition data....");
           }
           //TODO remove till this
 
@@ -536,7 +537,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     paint.setColor(Color.RED);
     paint.setStyle(Style.STROKE);
     paint.setStrokeWidth(2.0f);
-    Log.v("VIJESH","onFaceDetected");
+    Log.v(TAG,"onFaceDetected");
     float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
     switch (MODE) {
       case TF_OD_API:
@@ -599,7 +600,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         cvFace.drawBitmap(portraitBmp, matrix, null);
 
-        //vijesh
+        //
         final Canvas maskcvFace = new Canvas(maskFaceBmp);
         float sx2 = ((float) TF_OD_API_INPUT_SIZE_MASK) / faceBB.width();
         float sy2 = ((float) TF_OD_API_INPUT_SIZE_MASK) / faceBB.height();
@@ -608,7 +609,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         matrix2.postScale(sx2, sy2);
         maskcvFace.drawBitmap(portraitBmp,matrix2,null);
         boolean masked = isMaskDetected(maskFaceBmp);
-        //vijesh
+        //
 
         //canvas.drawRect(faceBB, paint);
 
@@ -634,9 +635,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         final List<SimilarityClassifier.Recognition> resultsAux = detector.recognizeImage(faceBmp, add);
         lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-        //vijesh
+        //
         color = (masked)?Color.GREEN : Color.RED;
-        //vijesh
+        //
 
         if (resultsAux.size() > 0) {
 
@@ -690,16 +691,16 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         //String email = org.tensorflow.lite.examples.detection.Config.EMAIL;
         if (color == Color.GREEN && !emailSend) {
-          String email = "vijeshhere@yahoo.com";
+          String email = "projecttesting535@gmail.com";
           String subject = label + " is not wearing mask";
           String body = "test mail";
           emailSend = true;
           email = mPreference.getString(label, email);
           SendMail sendMail = new SendMail(this, email, subject, body);
           //sendMail.execute();
-          Log.i("VIJESH", "Mail send to " + email);
+          Log.i(TAG, "Mail send to " + email);
         }else{
-          Log.i("VIJESH", label + " Unknown face");
+          Log.i(TAG, label + " Unknown face");
         }
       }
 
@@ -731,13 +732,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       if (conf >= 0.6f) {
         confidence = conf;
         label = result.getTitle();
-        Log.d("VIJESH","isMaskDetected: LABEL: " + label +", Confidence: "+confidence);
+        Log.d(TAG,"isMaskDetected: LABEL: " + label +", Confidence: "+confidence);
         if (result.getId().equals("0")) {
-          Log.i ("VIJESH","isMaskDetected: MASK   -------------------------------------");
+          Log.i (TAG,"isMaskDetected: MASK   -------------------------------------");
           maskedFace = true;
         }
         else {
-          Log.i ("VIJESH","NO MASK   ???????????????????????????????????");
+          Log.i (TAG,"NO MASK   ???????????????????????????????????");
 //          if ( confidence > 0.9999f){
 //            ringAlarmSound();
 //          }
@@ -745,7 +746,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       }
 
     }else{
-      Log.i("VIJESH", "No result from mask detection" );
+      Log.i(TAG, "No result from mask detection" );
 
     }
 
@@ -768,11 +769,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       oos = new ObjectOutputStream(fos);
       oos.writeObject(recog);
       oos.close();
-      Log.v("VIJESH", "WriteRecordsToExtFile: Recog Object: " + dir.getPath()+ " recog:: " + recog.toString());
+      Log.v(TAG, "WriteRecordsToExtFile: Recog Object: " + dir.getPath()+ " recog:: " + recog.toString());
       fos.close();
       return true;
     }catch(Exception e){
-      Log.e("VIJESH", "Cant save records:  "+e.getMessage());
+      Log.e(TAG, "Cant save records:  "+e.getMessage());
       return false;
     }
     finally{
@@ -781,7 +782,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
           oos.close();
           fos.close();
         }catch(Exception e){
-          Log.e("VIJESH", "Error while closing stream "+e.getMessage());
+          Log.e(TAG, "Error while closing stream "+e.getMessage());
         }
     }
   }
@@ -801,11 +802,11 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       oos = new ObjectOutputStream(fos);
       oos.writeObject(recog);
       oos.close();
-      Log.v("VIJESH", "WriteRecordsToFile: Recog Object: " + recog.toString());
+      Log.v(TAG, "WriteRecordsToFile: Recog Object: " + recog.toString());
       fos.close();
       return true;
     }catch(Exception e){
-      Log.e("VIJESH", "Cant save records:  "+e.getMessage());
+      Log.e(TAG, "Cant save records:  "+e.getMessage());
       return false;
     }
     finally{
@@ -813,7 +814,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         try{
           oos.close();
         }catch(Exception e){
-          Log.e("VIJESH", "Error while closing stream "+e.getMessage());
+          Log.e(TAG, "Error while closing stream "+e.getMessage());
         }
     }
   }
@@ -827,10 +828,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       ois = new ObjectInputStream(fin);
       SimilarityClassifier.Recognition recog = (SimilarityClassifier.Recognition) ois.readObject();
       ois.close();
-      Log.v("VIJESH", "ReadRecordsFromFile: Recog Object: " + recog.toString());
+      Log.v(TAG, "ReadRecordsFromFile: Recog Object: " + recog.toString());
       return recog;
     }catch(Exception e){
-      Log.e("VIJESH", "Cant read saved records   "+e.getMessage());
+      Log.e(TAG, "Cant read saved records   "+e.getMessage());
       return null;
     }
     finally{
@@ -838,7 +839,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         try{
           ois.close();
         }catch(Exception e){
-          Log.i("VIJESH", "Error in closing stream while reading records"+e.getMessage());
+          Log.i(TAG, "Error in closing stream while reading records"+e.getMessage());
         }
     }
   }
@@ -854,10 +855,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       ois = new ObjectInputStream(fin);
       SimilarityClassifier.Recognition recog = (SimilarityClassifier.Recognition) ois.readObject();
       ois.close();
-      Log.v("VIJESH", "readRecordsFromAssets: Recog Object: " + recog.toString());
+      Log.v(TAG, "readRecordsFromAssets: Recog Object: " + recog.toString());
       return recog;
     }catch(Exception e){
-      Log.e("VIJESH", "readRecordsFromAssets Cant read saved records "+fileName + e.getMessage());
+      Log.e(TAG, "readRecordsFromAssets Cant read saved records "+fileName + e.getMessage());
       return null;
     }
 
@@ -866,7 +867,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         try{
           ois.close();
         }catch(Exception e){
-          Log.i("VIJESH", "Error in closing stream while reading records"+e.getMessage());
+          Log.i(TAG, "Error in closing stream while reading records"+e.getMessage());
         }
     }
   }
@@ -888,13 +889,13 @@ Face data can be saved in external directory. To avoid teaching every face manua
           SimilarityClassifier.Recognition recog = readRecordsFromFile(fileName);
           if (null != recog) {
             detector.register(fileName, recog); //label is same as filename
-            Log.v("VIJESH", "Initializing recognition data file " + folder.getPath() + fileName);
+            Log.v(TAG, "Initializing recognition data file " + folder.getPath() + fileName);
           }
         }
       }
     }catch (Exception e){
       e.printStackTrace();
-      Log.i("VIJESH", e.getMessage());
+      Log.i(TAG, e.getMessage());
     }
   }
 
@@ -912,12 +913,12 @@ Face data can be saved in external directory. To avoid teaching every face manua
 //        SimilarityClassifier.Recognition recog = readRecordsFromAssets(fileName);
 //        if (null != recog) {
 //          detector.register(stripExtension(fileName), recog); //label is same as filename
-//          Log.v("VIJESH", "initSavedRecogFilesFromAssets: Initializing recognition data file From Assets: " + fileName);
+//          Log.v(TAG, "initSavedRecogFilesFromAssets: Initializing recognition data file From Assets: " + fileName);
 //        }
 //      }
 //    }catch(Exception e){
 //        e.printStackTrace();
-//        Log.i("VIJESH", e.getMessage());
+//        Log.i(TAG, e.getMessage());
 //    }
 //  }
 
@@ -950,7 +951,7 @@ Face data can be saved in external directory. To avoid teaching every face manua
 //      n = generator.nextInt(n);
 //      String fname = "Image-" + n + ".jpg";
 //      File file = new File(myDir, fname);
-//      Log.i("VIJESH", "" + file);
+//      Log.i(TAG, "" + file);
 //      if (file.exists())
 //        file.delete();
 //      try {
@@ -963,15 +964,15 @@ Face data can be saved in external directory. To avoid teaching every face manua
 //      }
 //
 //      jpegPath = root + "/req_image/" + fname;
-//      Log.i("VIJESH","JPEG save to path: " + jpegPath);
+//      Log.i(TAG,"JPEG save to path: " + jpegPath);
 //    }catch (Exception e){
 //      e.printStackTrace();
-//      Log.e("VIJESH", "Failed to write file to memory");
+//      Log.e(TAG, "Failed to write file to memory");
 //    }
 //    return jpegPath;
 //  }
   private void uploadBitMaptoFirebase(Bitmap faceBmp){
-    Log.i("VIJESH", "Uploading files to firebase cloud.........");
+    Log.i(TAG, "Uploading files to firebase cloud.........");
     Random generator = new Random(); //create a random file name
     int n = 10000;
     n = generator.nextInt(n);
@@ -994,7 +995,7 @@ Face data can be saved in external directory. To avoid teaching every face manua
       public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
         // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
         // ...
-        Log.i("VIJESH","uploaded: "+taskSnapshot.toString());
+        Log.i(TAG,"uploaded: "+taskSnapshot.toString());
       }
     });
 

@@ -146,7 +146,6 @@ public interface SimilarityClassifier {
     //VIJESH
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
-      Log.v("VIJESH", "SimilarityClassifier.Recognition:WriteObject Entered");
       // This will serialize all fields that you did not mark with 'transient'
       // (Java's default behaviour)
       oos.defaultWriteObject();
@@ -171,7 +170,6 @@ public interface SimilarityClassifier {
     }
 
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException{
-      Log.v("VIJESH", "SimilarityClassifier.Recognition:ReadObject Entered");
       // Now, all again, deserializing - in the SAME ORDER!
       // All non-transient fields
       ois.defaultReadObject();

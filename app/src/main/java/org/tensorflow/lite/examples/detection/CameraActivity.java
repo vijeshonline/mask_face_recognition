@@ -102,9 +102,7 @@ public abstract class CameraActivity extends AppCompatActivity
   protected Integer getCameraFacing() {
     return useFacing;
   }
-
-
-
+  private static final String TAG = "MASK_FACE_RECOG";
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -124,10 +122,10 @@ public abstract class CameraActivity extends AppCompatActivity
 
 
     if (hasPermission()) {
-      Log.i("VIJESH","camera permitted");
+      Log.i(TAG,"camera permitted");
       setFragment();
     } else {
-      Log.i("VIJESH","camera not permitted requested");
+      Log.i(TAG,"camera not permitted requested");
       requestPermission();
     }
     if (hasExtMemoryPermission() != true) {
@@ -424,17 +422,17 @@ public abstract class CameraActivity extends AppCompatActivity
     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     if (requestCode == PERMISSIONS_REQUEST) {
       if (allPermissionsGranted(grantResults)) {
-        Log.i("VIJESH","camera permitted  2");
+        Log.i(TAG,"camera permitted  2");
         setFragment();
       } else {
         requestPermission();
-        Log.i("VIJESH","camera not permitted 2");
+        Log.i(TAG,"camera not permitted 2");
       }
     }else if(requestCode == PERMISSION_REQUEST_EXT_STORAGE){
       if (allPermissionsGranted(grantResults)) {
-        Log.i("VIJESH", "onRequestPermissionsResult: EXT STORAGE permission not granted. *************");
+        Log.i(TAG, "onRequestPermissionsResult: EXT STORAGE permission not granted. *************");
       }else if (allPermissionsGranted(grantResults)) {
-        Log.i("VIJESH", "onRequestPermissionsResult: permission granted.");
+        Log.i(TAG, "onRequestPermissionsResult: permission granted.");
       }
     }
   }
