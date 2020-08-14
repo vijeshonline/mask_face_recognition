@@ -141,6 +141,10 @@ public abstract class CameraActivity extends AppCompatActivity
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
     bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
 
+    bottomSheetLayout.setEnabled(false);
+    gestureLayout.setEnabled(false);
+    bottomSheetArrowImageView.setEnabled(false);
+
     btnSwitchCam = findViewById(R.id.fab_switchcam);
 
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
@@ -159,7 +163,7 @@ public abstract class CameraActivity extends AppCompatActivity
             sheetBehavior.setPeekHeight(height);
           }
         });
-    sheetBehavior.setHideable(false);
+    sheetBehavior.setHideable(true);
 
     sheetBehavior.setBottomSheetCallback(
         new BottomSheetBehavior.BottomSheetCallback() {

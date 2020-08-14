@@ -156,7 +156,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private Bitmap maskFaceBmp = null;
 
   private FloatingActionButton fabAdd;
-
+private String oldLabel = "";
   //private HashMap<String, Classifier.Recognition> knownFaces = new HashMap<>();
 
   private SharedPreferences mPreference;
@@ -648,7 +648,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //          if (extra != null) {
 //            LOGGER.i("embeeding retrieved " + extra.toString());
 //          }
-
+          label = (masked)?"Masked":"Unknown Face";
           float conf = result.getDistance();
           if (conf < 1.0f) {
 
@@ -657,8 +657,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             if (result.getId().equals("0")) {
               //color = Color.GREEN;
               color = (masked)?Color.GREEN : Color.RED;
+              Log.i(TAG, oldLabel + "------" + label);
+              if(label != oldLabel) {
+                Toast.makeText(this.getApplicationContext(), "Warning email sent to " + label, Toast.LENGTH_SHORT).show();
+              }
+              oldLabel = label;
             } else {
               //color = Color.RED;
+              label = "Unknown";
               color = (masked)?Color.GREEN : Color.RED;
             }
           }
@@ -697,10 +703,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
           emailSend = true;
           email = mPreference.getString(label, email);
           SendMail sendMail = new SendMail(this, email, subject, body);
-          //sendMail.execute();
+          //sendMail.execute(); //TODO this should be enabled to send mail. GMAIL blocks it often.
           Log.i(TAG, "Mail send to " + email);
         }else{
-          Log.i(TAG, label + " Unknown face");
+//          Log.i(TAG, label + " Unknown face");
         }
       }
 
