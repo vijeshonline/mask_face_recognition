@@ -9,3 +9,6 @@ This app includes 3 modules.
 3. Face recognition.
 
 APK location: https://github.com/vijeshonline/mask_face_recognition/blob/master/apk/face_recognition.apk
+
+
+Link to server side: https://github.com/vijeshonline/OpenCV-Face-Recog
